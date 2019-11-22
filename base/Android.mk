@@ -55,7 +55,7 @@ LOCAL_STATIC_LIBRARIES := \
   	libswscale
 
 
-LOCAL_LDFLAGS += -Wl,--gc-sections,--icf=safe
+LOCAL_LDFLAGS += -Wl,--gc-sections
 
 
 include $(BUILD_SHARED_LIBRARY)
