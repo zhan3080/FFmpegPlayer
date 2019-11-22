@@ -9,35 +9,34 @@
 #define JNI_CLASS_FFMPEG_BRIDGE     "com/xxx/ffmpeglibrary/FFmpegBridge"
 
 
- /* Declare function map to java native method 声明映射过来的本地函数 */
- void base_hello(JNIEnv * env,jobject obj);
+/* Declare function map to java native method 声明映射过来的本地函数 */
+void base_hello(JNIEnv * env,jobject obj);
+
+jstring get_str(JNIEnv* env, jobject thiz);
+
+jint add_int(JNIEnv* env, jobject jobj, jint num1, jint num2);
 
 /* rule of JNINativeMethod 
-  1、java类方法名
-  2、signature 方法签名，表示一个java跟native方法参数的映射关系
-  3、本地方法名
+*  方法对应表
+*  1、java类方法名
+*  2、signature 方法签名，表示一个java跟native方法参数的映射关系
+*  3、本地方法名
 */
-static JNINativeMethod g_methods[] =
+
+
+ 
+static JNINativeMethod gMethods[] =
 {
-    {"_baseHello",             "(V)V",       (void *)base_hello}
-    // {"_setSurface",         "(JLandroid/view/Surface;)V",   (void *)set_surface},
-    // {"_setFrameData",      "(Ljava/lang/String;I[BI)V",     (void*)set_frame_data},
-    // {"_prepare",            "(J)V",                         (void *)prepare},
-    // {"_start",              "(J)V",                         (void *)start},
-    // {"_stop",               "(J)V",                         (void *)stop},
-    // {"_getVideoWidth",      "(J)I",                         (void *)get_video_width},
-    // {"_getVideoHeight",     "(J)I",                         (void *)get_video_height},
-    // {"_getFps",             "(J)[J",                        (void *)get_fps},
-    // {"_getDelay",           "(JI)I",                        (void *)get_delay},
-    // {"_setVolume",          "(JI)I",                        (void *)set_volume},
-    // {"_pause",              "(J)I",                         (void *)pause}
+    {"_baseHello",             "()V",                          (void *)base_hello },
+    {"getStr",                 "()Ljava/lang/String;",         (void*)get_str },
+    {"addInt",                 "(II)I",                        (void*)add_int }
 
 };
 
 static int registerFFplayer(JNIEnv *env, jclass cls){
     LogI(TAG, DEBUG, "registerNatives");
     //调用RegisterNatives来注册本地方法，完成映射
-    if((*env)->RegisterNatives(env, cls, g_methods, sizeof(g_methods) / sizeof(g_methods[0])) < 0){
+    if((*env)->RegisterNatives(env, cls, gMethods, sizeof(gMethods) / sizeof(gMethods[0])) < 0){
         LogE(TAG, DEBUG, "RegisterNatives failed");
         return 1;
     }
@@ -49,6 +48,7 @@ static int registerFFplayer(JNIEnv *env, jclass cls){
 */
 jint JNI_OnLoad(JavaVM* vm, void *reserved)
 {
+    LogE(TAG, DEBUG, "JNI_OnLoad");
     JNIEnv* env = NULL;
     if((*vm)->GetEnv(vm,(void **)&env,JNI_VERSION_1_4) != JNI_OK){
         LogE(TAG, DEBUG, "JNI_OnLoad GetEnv error");
@@ -69,8 +69,17 @@ void JNI_OnUnload(JavaVM* vm, void *reserved)
 
 void base_hello(JNIEnv * env,jobject obj)
 {
-    LogI(TAG,DEBUG,"base_hello");
+    LogI(TAG,DEBUG,"base_hello!!!");
     return;
+}
+
+jstring get_str(JNIEnv* env, jobject thiz)
+{
+    return (*env)->NewStringUTF(env, "I am chenyu, 动态注册JNI");
+}
+ 
+jint add_int(JNIEnv* env, jobject jobj, jint num1, jint num2){
+    return num1 + num2;
 }
 
 

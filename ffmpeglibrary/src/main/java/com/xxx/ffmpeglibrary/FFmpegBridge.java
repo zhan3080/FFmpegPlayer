@@ -13,9 +13,14 @@ public class FFmpegBridge {
 
     public native void _baseHello();
 
+    public native String getStr();
+
+    public native int addInt(int a, int b);
+
     public void sayHello() {
         Log.i(TAG, "sayHello");
         _baseHello();
-        Log.i(TAG, "sayHello libPath:" + System.getProperty(libName));
+        Log.i(TAG, "sayHello getStr:" + getStr());
+        Log.i(TAG, "sayHello addInt:" + addInt(1, 3));
     }
 }
