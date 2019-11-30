@@ -2,6 +2,7 @@
 
 #include "logger.h"
 #include <jni.h>
+#include "libavcodec/avcodec.h"
 #define TAG "ffmpeg_jni"
 #define DEBUG true
 
@@ -16,7 +17,7 @@ jstring get_str(JNIEnv* env, jobject thiz);
 
 jint add_int(JNIEnv* env, jobject jobj, jint num1, jint num2);
 
-/* rule of JNINativeMethod 
+/* rule of JNINativeMethod
 *  方法对应表
 *  1、java类方法名
 *  2、signature 方法签名，表示一个java跟native方法参数的映射关系
@@ -24,7 +25,7 @@ jint add_int(JNIEnv* env, jobject jobj, jint num1, jint num2);
 */
 
 
- 
+
 static JNINativeMethod gMethods[] =
 {
     {"_baseHello",             "()V",                          (void *)base_hello },
@@ -43,7 +44,7 @@ static int registerFFplayer(JNIEnv *env, jclass cls){
     return 0;
 }
 
-/* This function will be exec when so been loading. 
+/* This function will be exec when so been loading.
    这个方法在so加载的时候执行
 */
 jint JNI_OnLoad(JavaVM* vm, void *reserved)
@@ -75,10 +76,15 @@ void base_hello(JNIEnv * env,jobject obj)
 
 jstring get_str(JNIEnv* env, jobject thiz)
 {
-    return (*env)->NewStringUTF(env, "I am chenyu, 动态注册JNI");
+    char info[10000] = { 0 };
+    sprintf(info, "%s\n", avcodec_configuration());
+    return (*env)->NewStringUTF(env, info);
+
+    //return (*env)->NewStringUTF(env, "I am chenyu, 动态注册JNI");
 }
- 
-jint add_int(JNIEnv* env, jobject jobj, jint num1, jint num2){
+
+jint add_int(JNIEnv* env, jobject jobj, jint num1, jint num2)
+{
     return num1 + num2;
 }
 

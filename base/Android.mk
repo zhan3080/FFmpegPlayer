@@ -37,7 +37,14 @@ LOCAL_MODULE    := ffplayer
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
-	$(LOCAL_PATH)/logger.h 
+	$(LOCAL_PATH)/logger.h
+
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libavfilter
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libavformat
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libavutil
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libswresample
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libswscale
+#LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libavcodec
 
 
 
@@ -53,7 +60,6 @@ LOCAL_STATIC_LIBRARIES := \
   	libavutil \
 	libswresample \
   	libswscale
-
 
 LOCAL_LDFLAGS += -Wl,--gc-sections
 
