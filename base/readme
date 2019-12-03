@@ -1,2 +1,9 @@
 include及lib是从ffmpeg编译出来后，拷贝过来的
 git地址：git@github.com:zhan3080/FFMPEG_ANDROID.git
+
+
+ffmpeg使用build_one.sh(编译动态库，或者静态库)编译，能正常运行
+
+1、multi_so目录，是使用build_one.sh编译出来的多个so，编译出libffplayer.so,然后java层加载所有so（ffmpeg编译出来的8个so，及libffplayer.so）
+
+2、base跟目录，是使用build_one.sh编译出来的多个.a，编译到一个so（libffplayer.so）里，java层只加载一个so（libffplayer.so）
