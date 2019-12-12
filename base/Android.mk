@@ -62,7 +62,10 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
 LOCAL_LDLIBS := -llog -lz
 
-LOCAL_STATIC_LIBRARIES := libavcodec libavfilter libavformat libavutil libswresample libswscale libavdevice libpostproc
+#LOCAL_STATIC_LIBRARIES := libavcodec libavfilter libavformat libavutil libswresample libswscale libavdevice libpostproc
+#顺序很重要
+LOCAL_STATIC_LIBRARIES := libavformat libavfilter libavcodec libavutil libswresample libavdevice  libpostproc libswscale
+
 
 LOCAL_LDFLAGS += -Wl,--gc-sections
 
