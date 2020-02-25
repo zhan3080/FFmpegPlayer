@@ -10,7 +10,10 @@
   include/libavutil/buffer.h include/libavutil/cpu.h \
   include/libavutil/channel_layout.h include/libavutil/dict.h \
   include/libavutil/frame.h include/libavutil/hwcontext.h \
-  include/libavcodec/version.h
+  include/libavcodec/version.h include/libavformat/avformat.h \
+  include/libavformat/avio.h include/libavformat/version.h \
+  include/libavfilter/avfilter.h include/libavfilter/version.h \
+  include/libswscale/swscale.h include/libswscale/version.h
 
 logger.h:
 
@@ -57,3 +60,17 @@ include/libavutil/frame.h:
 include/libavutil/hwcontext.h:
 
 include/libavcodec/version.h:
+
+include/libavformat/avformat.h:
+
+include/libavformat/avio.h:
+
+include/libavformat/version.h:
+
+include/libavfilter/avfilter.h:
+
+include/libavfilter/version.h:
+
+include/libswscale/swscale.h:
+
+include/libswscale/version.h:

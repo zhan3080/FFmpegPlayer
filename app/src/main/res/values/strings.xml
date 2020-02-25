@@ -1,9 +1,14 @@
 <resources>
     <string name="app_name">FFmpegPlayer</string>
-    <string name="test">test</string>
+    <string name="ffmpeg">FFMPEG</string>
     <string name="ProtocolInfo">ProtocolInfo</string>
     <string name="AvformatInfo">AvformatInfo</string>
     <string name="AvcodecInfo">AvcodecInfo</string>
     <string name="AvfilterInfo">AvfilterInfo</string>
     <string name="Configuration">Configuration</string>
+
+    <string name="decode">Decode</string>
+    <string name="input">inputPath</string>
+    <string name="output">output</string>
+
 </resources>

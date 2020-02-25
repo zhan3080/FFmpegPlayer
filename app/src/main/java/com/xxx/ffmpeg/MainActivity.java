@@ -2,6 +2,7 @@ package com.xxx.ffmpeg;
 
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -25,14 +26,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         button1 = findViewById(R.id.button1);
         button1.setOnClickListener(listener);
-        button2 = findViewById(R.id.button2);
-        button2.setOnClickListener(listener);
-        button3 = findViewById(R.id.button3);
-        button3.setOnClickListener(listener);
-        button4 = findViewById(R.id.button4);
-        button4.setOnClickListener(listener);
-        button5 = findViewById(R.id.button5);
-        button5.setOnClickListener(listener);
+//        button2 = findViewById(R.id.button2);
+//        button2.setOnClickListener(listener);
+//        button3 = findViewById(R.id.button3);
+//        button3.setOnClickListener(listener);
+//        button4 = findViewById(R.id.button4);
+//        button4.setOnClickListener(listener);
+//        button5 = findViewById(R.id.button5);
+//        button5.setOnClickListener(listener);
         mTextView = findViewById(R.id.info);
     }
 
@@ -42,7 +43,8 @@ public class MainActivity extends Activity {
             switch (view.getId()){
                 case R.id.button1:
                     Log.i(TAG,"onClick button1");
-                    getUrlprotocolinfo();
+//                    getUrlprotocolinfo();
+                    startActivity(new Intent(MainActivity.this,FfmpegActivity.class));
                     break;
                 case R.id.button2:
                     Log.i(TAG,"onClick button2");

@@ -16,14 +16,14 @@ public class FFmpegBridge {
     public static String libswscale = "swscale-5";
 
     static {
-        System.loadLibrary(libavcodec);
-        System.loadLibrary(libavdevice);
-        System.loadLibrary(libavfilter);
-        System.loadLibrary(libavformat);
-        System.loadLibrary(libavutil);
-        System.loadLibrary(libpostproc);
-        System.loadLibrary(libswresample);
-        System.loadLibrary(libswscale);
+//        System.loadLibrary(libavcodec);
+//        System.loadLibrary(libavdevice);
+//        System.loadLibrary(libavfilter);
+//        System.loadLibrary(libavformat);
+//        System.loadLibrary(libavutil);
+//        System.loadLibrary(libpostproc);
+//        System.loadLibrary(libswresample);
+//        System.loadLibrary(libswscale);
         System.loadLibrary(libName);
     }
 
@@ -38,6 +38,8 @@ public class FFmpegBridge {
     public native String avcodecinfo();
     public native String avfilterinfo();
     public native String configurationinfo();
+    public native int decode(String inputUrl, String outputUrl);
+    public native int stream(String inputurl, String outputurl);
 
     public void sayHello() {
         Log.i(TAG, "sayHello!!");
