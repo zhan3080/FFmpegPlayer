@@ -1,6 +1,7 @@
 package com.xxx.ffmpeglibrary;
 
 import android.util.Log;
+import android.view.Surface;
 
 public class FFmpegBridge {
     private static final String TAG = "FFmpegBridge";
@@ -41,6 +42,14 @@ public class FFmpegBridge {
     public native int decode(String inputUrl, String outputUrl);
     public native int stream(String inputurl, String outputurl);
 
+    public native int nativeSetSurface(Surface view);
+
+    public native int nativePausePlayer();
+
+    public native int nativeResumePlayer();
+
+    public native int nativeStopPlayer();
+
     public void sayHello() {
         Log.i(TAG, "sayHello!!");
         _baseHello();
@@ -66,5 +75,21 @@ public class FFmpegBridge {
 
     public String getConfigurationinfo() {
         return configurationinfo();
+    }
+
+    public  int setSurface(Surface view){
+        return nativeSetSurface(view);
+    }
+
+    public  int pausePlayer(){
+        return nativePausePlayer();
+    }
+
+    public  int resumePlayer(){
+        return nativeResumePlayer();
+    }
+
+    public  int stopPlayer(){
+        return nativeStopPlayer();
     }
 }

@@ -8,6 +8,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,6 +30,7 @@ public class FfmpegActivity extends Activity {
     private EditText mInputPath;
     private EditText mOutputPath;
     private FFmpegBridge bridge;
+    private SurfaceView mSurfaceView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +48,7 @@ public class FfmpegActivity extends Activity {
         button5.setOnClickListener(listener);
         mInputPath = findViewById(R.id.inputpath);
         mOutputPath = findViewById(R.id.outputpath);
+        mSurfaceView = findViewById(R.id.videoid);
         bridge = new FFmpegBridge();
         checkPermission();
     }
@@ -130,6 +135,63 @@ public class FfmpegActivity extends Activity {
     private void getConfigurationinfo() {
         String s = bridge.getConfigurationinfo();
     }
+
+    private  int setSurface(Surface view){
+       return bridge.setSurface(view);
+    }
+
+    private  int pausePlayer(){
+        return bridge.pausePlayer();
+    }
+
+    private  int resumePlayer(){
+        return bridge.resumePlayer();
+    }
+
+    private  int stopPlayer(){
+        return bridge.stopPlayer();
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(mSurfaceView != null){
+            mSurfaceView.getHolder().addCallback(callback);
+        }
+        resumePlayer();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pausePlayer();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopPlayer();
+    }
+
+    private SurfaceHolder.Callback callback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder surfaceHolder) {
+            Log.i(TAG, "surfaceCreated ");
+            setSurface(surfaceHolder.getSurface());
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder surfaceHolder, int format, int width, int height) {
+            Log.v(TAG, "surfaceChanged, format is " + format + ", width is "
+                    + width + ", height is" + height);
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+            Log.i(TAG, "surfaceDestroyed ");
+        }
+    };
 
 
     private void checkPermission() {

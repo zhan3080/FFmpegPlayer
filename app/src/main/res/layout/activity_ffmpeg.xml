@@ -68,5 +68,10 @@
             android:layout_height="wrap_content"
             android:text="rtmp://192.168.1.4:1935/rtmplive/room/testhzz"/>
     </LinearLayout>
+    <SurfaceView
+        android:id="@+id/videoid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
 
 </LinearLayout>
