@@ -25,12 +25,14 @@ public class FfmpegActivity extends Activity {
     private Button button3;
     private Button button4;
     private Button button5;
+    private Button button6;
     private TextView mInput;
     private TextView mOutput;
     private EditText mInputPath;
     private EditText mOutputPath;
     private FFmpegBridge bridge;
     private SurfaceView mSurfaceView;
+    private Surface mSurface;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +48,8 @@ public class FfmpegActivity extends Activity {
         button4.setOnClickListener(listener);
         button5 = findViewById(R.id.button5);
         button5.setOnClickListener(listener);
+        button6 = findViewById(R.id.button6);
+        button6.setOnClickListener(listener);
         mInputPath = findViewById(R.id.inputpath);
         mOutputPath = findViewById(R.id.outputpath);
         mSurfaceView = findViewById(R.id.videoid);
@@ -76,6 +80,13 @@ public class FfmpegActivity extends Activity {
                 case R.id.button5:
                     Log.i(TAG, "onClick button5");
                     getConfigurationinfo();
+                    break;
+                case R.id.button6:
+                    Log.i(TAG, "onClick button6");
+                    setSurface(mSurface);
+//                    pausePlayer();
+//                    stopPlayer();
+//                    resumePlayer();
                     break;
                 default:
                     break;
@@ -178,7 +189,8 @@ public class FfmpegActivity extends Activity {
         @Override
         public void surfaceCreated(SurfaceHolder surfaceHolder) {
             Log.i(TAG, "surfaceCreated ");
-            setSurface(surfaceHolder.getSurface());
+//            setSurface(surfaceHolder.getSurface());
+            mSurface = surfaceHolder.getSurface();
         }
 
         @Override

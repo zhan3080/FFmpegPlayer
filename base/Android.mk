@@ -44,10 +44,13 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := ffplayer
 #sourcecode for ffplayer
-LOCAL_SRC_FILES := jni_ffmpeg_player.c
+LOCAL_SRC_FILES := \
+    jni_ffmpeg_player.c \
+    videoDecode.c
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
+	$(LOCAL_PATH)/videoDecode.h \
 	$(LOCAL_PATH)/logger.h
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
@@ -60,12 +63,11 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
 
 
-LOCAL_LDLIBS := -llog -lz
+LOCAL_LDLIBS := -llog -lz -landroid
 
 #LOCAL_STATIC_LIBRARIES := libavcodec libavfilter libavformat libavutil libswresample libswscale libavdevice libpostproc
 #顺序很重要
 LOCAL_STATIC_LIBRARIES := libavformat libavfilter libavcodec libavutil libswresample libavdevice  libpostproc libswscale
-
 
 LOCAL_LDFLAGS += -Wl,--gc-sections
 

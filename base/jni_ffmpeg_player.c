@@ -7,6 +7,11 @@
 #include "libavfilter/avfilter.h"
 #include "libswscale/swscale.h"
 
+// for native window JNI
+#include <android/native_window_jni.h>
+#include <android/native_window.h>
+#include "videoDecode.h"
+
 #define TAG "ffmpeg_jni"
 #define DEBUG true
 
@@ -28,6 +33,10 @@ jstring get_avfilterinfo(JNIEnv* env, jobject thiz);
 jstring get_configurationinfo(JNIEnv* env, jobject thiz);
 jint decode(JNIEnv* env, jobject thiz, jstring input_jstr, jstring output_jstr);
 jint stream(JNIEnv* env, jobject thiz, jstring input_jstr, jstring output_jstr);
+jint SetSurface(JNIEnv* env, jobject thiz, jobject jsurface);
+jint pausePlayer(JNIEnv* env, jobject thiz);
+jint resumePlayer(JNIEnv* env, jobject thiz);
+jint stopPlayer(JNIEnv* env, jobject thiz);
 
 /* rule of JNINativeMethod
 *  方法对应表
@@ -57,7 +66,11 @@ static JNINativeMethod gMethods[] =
     {"avfilterinfo",           "()Ljava/lang/String;",         (void*)get_avfilterinfo },
     {"configurationinfo",      "()Ljava/lang/String;",         (void*)get_configurationinfo },
     {"decode",                 "(Ljava/lang/String;Ljava/lang/String;)I", (void*)decode},
-	{"stream",                 "(Ljava/lang/String;Ljava/lang/String;)I", (void*)stream}
+	{"stream",                 "(Ljava/lang/String;Ljava/lang/String;)I", (void*)stream},
+	{"nativeSetSurface",       "(Landroid/view/Surface;)I", (void*)SetSurface},
+	{"nativePausePlayer",      "()I", (void*)pausePlayer},
+	{"nativeResumePlayer",     "()I", (void*)resumePlayer},
+	{"nativeStopPlayer",       "()I", (void*)stopPlayer}
 };
 
 static int registerFFplayer(JNIEnv *env, jclass cls){
@@ -543,5 +556,85 @@ end:
 	return 0;
 }
 
+static ANativeWindow* mANativeWindow;
+static ANativeWindow_Buffer mBuffer;
+
+jint SetSurface(JNIEnv* env, jobject thiz, jobject jsurface)
+{
+    LogE(TAG,DEBUG, "SetSurface.\n");
+    if (NULL == jsurface) {
+        LogE(TAG,DEBUG, "surface is null, destroy?");
+        mANativeWindow = NULL;
+        return 0;
+    }
+    mANativeWindow = ANativeWindow_fromSurface(env,jsurface);
+    LogE(TAG,DEBUG, "mANativeWindow is ok");
+    pthread_t thread1;
+    LogE(TAG,DEBUG, "pthread_create open_media");
+    int ret = pthread_create(&thread1, NULL, open_media, NULL);
+    LogE(TAG,DEBUG, "pthread_create ret:" + ret);
+    return 0;
+}
+
+
+int32_t setBuffersGeometry(int32_t width, int32_t height)
+{
+    int32_t format = WINDOW_FORMAT_RGB_565;
+
+    if (NULL == mANativeWindow) {
+        LogE(TAG,DEBUG, "mANativeWindow is NULL.");
+        return -1;
+    }
+
+    return ANativeWindow_setBuffersGeometry(mANativeWindow, width, height,
+            format);
+}
+
+void renderSurface(uint8_t *pixel)
+{
+    ANativeWindow_acquire(mANativeWindow);
+    if(0 != ANativeWindow_lock(mANativeWindow, &mBuffer, NULL))
+    {
+        LogE(TAG,DEBUG, "ANativeWindow_lock error");
+    }
+    LogI(TAG,DEBUG, "mBuffer width is %d, height is %d, stride is %d", mBuffer.width, mBuffer.height, mBuffer.stride);
+    if(mBuffer.width >= mBuffer.stride)
+    {
+        memcpy(mBuffer.bits, pixel, mBuffer.width * mBuffer.height * 2);
+    }
+    else
+    {
+        int i;
+        for(i = 0; i < mBuffer.height; i++)
+        {
+            memcpy((void*)((int)mBuffer.bits + mBuffer.stride * i * 2),
+                    (void*)((int)pixel + mBuffer.width * i * 2),
+                    mBuffer.width * 2);
+        }
+    }
+
+    if(0 != ANativeWindow_unlockAndPost(mANativeWindow))
+    {
+        LogE(TAG,DEBUG, "ANativeWindow_unlockAndPost error");
+    }
+}
+
+jint pausePlayer(JNIEnv* env, jobject thiz)
+{
+    LogE(TAG,DEBUG, "pausePlayer.\n");
+    return 0;
+}
+
+jint resumePlayer(JNIEnv* env, jobject thiz)
+{
+    LogE(TAG,DEBUG, "resumePlayer.\n");
+    return 0;
+}
+
+jint stopPlayer(JNIEnv* env, jobject thiz)
+{
+    LogE(TAG,DEBUG, "stopPlayer.\n");
+    return 0;
+}
 
 
