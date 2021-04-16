@@ -5,6 +5,7 @@
 #include "libavformat/avformat.h"
 #include "libavfilter/avfilter.h"
 #include "libswscale/swscale.h"
+#include "player.h"
 
 
 #include <pthread.h>
@@ -17,8 +18,93 @@
 #define TEST_URL "/sdcard/test.mp4"
 AVCodecContext *acodec_ctx;
 AVCodecContext *vcodec_ctx;
+PacketQueue video_queue;
+/*
+AVStream *vstream;
+AVStream *astream;
+AVCodec *vcodec;
+AVCodec *acodec;
+*/
+
 void* video_thread(void *argv);
 void video_render(AVCodecContext *vcodec_ctx, AVFrame *pFrame, AVPacket *pkt);
+void packet_queue_init(PacketQueue *q) {
+	memset(q, 0, sizeof(PacketQueue));
+	pthread_mutex_init(q->mutex, NULL);
+}
+
+int packet_queue_put(PacketQueue *q, AVPacket *pkt) {
+	AVPacketList *pkt1;
+
+	if ((NULL == pkt) || (NULL == q)) {
+		av_log(NULL, AV_LOG_ERROR,
+				"packet_queue_put failure, q or pkt is NULL. \n");
+		return -1;
+	}
+
+	if (av_dup_packet(pkt) < 0) {
+		av_log(NULL, AV_LOG_ERROR, "packet_queue_put av_dup_packet failure.\n");
+		return -1;
+	}
+
+	pkt1 = (AVPacketList*) av_malloc(sizeof(AVPacketList));
+	if (!pkt1) {
+		av_log(NULL, AV_LOG_ERROR, "packet_queue_put av_malloc failure.\n");
+		return -1;
+	}
+
+	pkt1->pkt = *pkt;
+	pkt1->next = NULL;
+
+	pthread_mutex_lock(q->mutex);
+
+	if (!q->last_pkt) {
+		q->first_pkt = pkt1;
+	} else {
+		q->last_pkt->next = pkt1;
+	}
+
+	q->last_pkt = pkt1;
+	q->nb_packets++;
+	q->size += pkt1->pkt.size;
+
+	pthread_mutex_unlock(q->mutex);
+
+	return 0;
+}
+
+int packet_queue_get(PacketQueue *q, AVPacket *pkt) {
+	AVPacketList *pkt1;
+	int ret;
+
+	pthread_mutex_lock(q->mutex);
+
+	pkt1 = q->first_pkt;
+
+	if (pkt1) {
+		q->first_pkt = pkt1->next;
+
+		if (!q->first_pkt) {
+			q->last_pkt = NULL;
+		}
+
+		q->nb_packets--;
+		q->size -= pkt1->pkt.size;
+		*pkt = pkt1->pkt;
+		av_free(pkt1);
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+
+	pthread_mutex_unlock(q->mutex);
+
+	return ret;
+}
+
+int packet_queue_size(PacketQueue *q) {
+	return q->size;
+}
 
 void open_media(void *argv)
 {
@@ -29,9 +115,10 @@ void open_media(void *argv)
     int i = 0;
     int err = 0;
     int framecnt = 0;
+
     AVFormatContext *fmt_ctx = NULL;
     AVDictionaryEntry *dict = NULL;
-    AVPacket *pkt;
+    AVPacket pkt;
     AVFrame *pFrame;
     int video_stream_index = -1;
     pthread_t thread;
@@ -88,39 +175,24 @@ void open_media(void *argv)
         LogI(TAG, DEBUG, "open_media avcodec_open2 w/h: %d/%d", vcodec_ctx->width, vcodec_ctx->height);
     }
 
-    /*if(-1 != video_stream_index)
+    if(-1 != video_stream_index)
     {
         pthread_create(&thread, NULL, video_thread, NULL);
-    }*/
+    }
     LogI(TAG, DEBUG, "open_media avcodec_send_packet err");
-    while(av_read_frame(fmt_ctx, pkt) >=0)
+    while (av_read_frame(fmt_ctx, &pkt) >= 0)
     {
-        LogI(TAG, DEBUG, "open_media avcodec_send_packet, stream_index=%d",pkt->stream_index);
-        if(pkt->stream_index == video_stream_index)
-        {
-            LogE(TAG, DEBUG, "open_media avcodec_send_packet ");
-            if(err = avcodec_send_packet(fmt_ctx, pkt) != 0)
-            {
-                LogE(TAG, DEBUG, "open_media avcodec_send_packet fail err=%d",err);
-                return;
-            }
-            while (avcodec_receive_frame(fmt_ctx, pFrame) == 0)
-            {
-                video_render(fmt_ctx, pFrame, pkt);
-                usleep(10000);
-            }
-            av_packet_unref(pkt);
+        if (pkt.stream_index == video_stream_index) {
+            packet_queue_put(&video_queue, &pkt);
+        } else {
+            av_free_packet(&pkt);
         }
     }
+    usleep(1000);
 
     if(pFrame != NULL) {
         av_frame_free(&pFrame);
         pFrame = NULL;
-    }
-
-    if(pkt != NULL) {
-        av_packet_free(&pkt);
-        pkt = NULL;
     }
 
     if(fmt_ctx)
@@ -156,11 +228,10 @@ void* video_thread(void *argv)
     pFrame = av_frame_alloc();
     for(;;)
     {
-        if (avcodec_receive_frame(vcodec_ctx, pFrame) <= 0)
+        if (packet_queue_get(&video_queue, packet) <= 0)
         {
             continue;
         }
-
         LogI(TAG, DEBUG, "open_media avcodec_decode_video2");
         avcodec_decode_video2(vcodec_ctx, pFrame, &frameFinished, packet);
 
@@ -177,14 +248,21 @@ void* video_thread(void *argv)
             img_covert(&pict, AV_PIX_FMT_RGB565LE, (AVPicture *)pFrame, vcodec_ctx->pix_fmt, vcodec_ctx->width, vcodec_ctx->height);
             LogI(TAG, DEBUG, "open_media renderSurface begin");
             renderSurface(pict.data[0]);
-            av_free(&pict.data[0]);
+            LogI(TAG, DEBUG, "open_media renderSurface end");
+            //av_free(&pict.data[0]);
+            LogI(TAG, DEBUG, "open_media av_free");
         }
+        LogI(TAG, DEBUG, "open_media av_packet_unref");
         av_packet_unref(packet);
+        LogI(TAG, DEBUG, "open_media av_init_packet");
         av_init_packet(packet);
+        LogI(TAG, DEBUG, "open_media usleep");
         usleep(10000);
+        LogI(TAG, DEBUG, "open_media usleep end");
     }
-
+    LogI(TAG, DEBUG, "open_media av_free");
     av_free(pFrame);
+    LogI(TAG, DEBUG, "open_media av_free end");
 }
 
 void video_render(AVCodecContext *vcodec_ctx, AVFrame *pFrame, AVPacket *pkt)

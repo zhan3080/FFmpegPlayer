@@ -592,7 +592,9 @@ int32_t setBuffersGeometry(int32_t width, int32_t height)
 
 void renderSurface(uint8_t *pixel)
 {
+    LogI(TAG,DEBUG, "renderSurface ");
     ANativeWindow_acquire(mANativeWindow);
+    LogI(TAG,DEBUG, "renderSurface ANativeWindow_acquire");
     if(0 != ANativeWindow_lock(mANativeWindow, &mBuffer, NULL))
     {
         LogE(TAG,DEBUG, "ANativeWindow_lock error");
@@ -607,16 +609,19 @@ void renderSurface(uint8_t *pixel)
         int i;
         for(i = 0; i < mBuffer.height; i++)
         {
+            LogI(TAG,DEBUG, "renderSurface i:%d",i);
             memcpy((void*)((int)mBuffer.bits + mBuffer.stride * i * 2),
                     (void*)((int)pixel + mBuffer.width * i * 2),
                     mBuffer.width * 2);
         }
     }
-
+    LogI(TAG,DEBUG, "renderSurface ANativeWindow_unlockAndPost");
     if(0 != ANativeWindow_unlockAndPost(mANativeWindow))
     {
         LogE(TAG,DEBUG, "ANativeWindow_unlockAndPost error");
     }
+    LogI(TAG,DEBUG, "renderSurface ANativeWindow_release");
+    ANativeWindow_release(mANativeWindow);
 }
 
 jint pausePlayer(JNIEnv* env, jobject thiz)
