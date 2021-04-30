@@ -46,11 +46,9 @@ LOCAL_MODULE    := ffplayer
 #sourcecode for ffplayer
 LOCAL_SRC_FILES := \
     jni_ffmpeg_player.c \
-    videoDecode.c
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
-	$(LOCAL_PATH)/videoDecode.h \
 	$(LOCAL_PATH)/logger.h
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
