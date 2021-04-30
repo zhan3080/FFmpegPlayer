@@ -19,13 +19,10 @@
 AVCodecContext *acodec_ctx;
 AVCodecContext *vcodec_ctx;
 PacketQueue video_queue;
-/*
 AVStream *vstream;
-AVStream *astream;
 AVCodec *vcodec;
-AVCodec *acodec;
-*/
 
+GlobalContext global_context;
 void* video_thread(void *argv);
 void video_render(AVCodecContext *vcodec_ctx, AVFrame *pFrame, AVPacket *pkt);
 void packet_queue_init(PacketQueue *q) {
@@ -67,6 +64,7 @@ int packet_queue_put(PacketQueue *q, AVPacket *pkt) {
 	q->last_pkt = pkt1;
 	q->nb_packets++;
 	q->size += pkt1->pkt.size;
+    LogI(TAG, DEBUG, "packet_queue_put size:%d",q->size);
 
 	pthread_mutex_unlock(q->mutex);
 
@@ -98,7 +96,8 @@ int packet_queue_get(PacketQueue *q, AVPacket *pkt) {
 	}
 
 	pthread_mutex_unlock(q->mutex);
-
+    LogI(TAG, DEBUG, "packet_queue_get ret:%d",ret);
+    LogI(TAG, DEBUG, "packet_queue_get size:%d",q->size);
 	return ret;
 }
 
@@ -106,15 +105,14 @@ int packet_queue_size(PacketQueue *q) {
 	return q->size;
 }
 
-void open_media(void *argv)
+void* open_media(void *argv)
 {
-
-    const char url[128] = "/sdcard/test.mp4";
-
     LogI(TAG, DEBUG, "open_media begin");
     int i = 0;
     int err = 0;
     int framecnt = 0;
+    global_context.quit = 0;
+    global_context.pause = 0;
 
     AVFormatContext *fmt_ctx = NULL;
     AVDictionaryEntry *dict = NULL;
@@ -133,13 +131,13 @@ void open_media(void *argv)
     if(err < 0)
     {
         LogE(TAG, DEBUG, "open_media avformat_open_input fail err:" + err);
-        return;
+        goto failure;
     }
     LogI(TAG, DEBUG, "open_media avformat_find_stream_info");
     if((err == avformat_find_stream_info(fmt_ctx,NULL)) < 0)
     {
         LogE(TAG, DEBUG, "open_media avformat_find_stream_info fail err:" + err);
-        return;
+        goto failure;
     }
 
     for(i = 0; i < fmt_ctx->nb_streams; i++)
@@ -154,18 +152,19 @@ void open_media(void *argv)
 
     if(-1 != video_stream_index)
     {
-        vcodec_ctx = fmt_ctx->streams[video_stream_index]->codec;
-
-        AVCodec *vcodec = avcodec_find_decoder(vcodec_ctx->codec_id);
+        vstream = fmt_ctx->streams[video_stream_index];
+        vcodec_ctx = vstream->codec;
+        vcodec = avcodec_find_decoder(vcodec_ctx->codec_id);
         if(NULL == vcodec)
         {
             LogE(TAG, DEBUG, "open_media avcodec_find_decoder fail");
-            return;
+            goto failure;
         }
 
         if(avcodec_open2(vcodec_ctx,vcodec, NULL) < 0)
         {
             LogE(TAG, DEBUG, "open_media avcodec_open2 fail");
+            goto failure;
         }
 
         if((vcodec_ctx->width > 0) && (vcodec_ctx->height > 0))
@@ -182,18 +181,19 @@ void open_media(void *argv)
     LogI(TAG, DEBUG, "open_media avcodec_send_packet err");
     while (av_read_frame(fmt_ctx, &pkt) >= 0)
     {
+        LogI(TAG, DEBUG, "open_media pkt.stream_index:%d",pkt.stream_index);
         if (pkt.stream_index == video_stream_index) {
             packet_queue_put(&video_queue, &pkt);
         } else {
             av_free_packet(&pkt);
         }
     }
-    usleep(1000);
 
-    if(pFrame != NULL) {
-        av_frame_free(&pFrame);
-        pFrame = NULL;
+    while (!global_context.quit) {
+    		usleep(1000);
     }
+
+    failure:
 
     if(fmt_ctx)
     {
@@ -201,8 +201,8 @@ void open_media(void *argv)
         avformat_free_context(fmt_ctx);
     }
     avformat_network_deinit();
-
-    return;
+    LogI(TAG, DEBUG, "open_media end");
+    return 0;
 }
 
 static int img_covert(AVPicture *dst, int dst_pix_fmt, const AVPicture *src, int src_pix_fmt, int src_width, int src_height)
@@ -228,41 +228,53 @@ void* video_thread(void *argv)
     pFrame = av_frame_alloc();
     for(;;)
     {
+        if (global_context.quit) {
+            LogI(TAG, DEBUG, "video_thread need exit. ");
+            break;
+        }
+
+        if (global_context.pause) {
+            continue;
+        }
+
         if (packet_queue_get(&video_queue, packet) <= 0)
         {
             continue;
         }
-        LogI(TAG, DEBUG, "open_media avcodec_decode_video2");
+        LogI(TAG, DEBUG, "video_thread avcodec_decode_video2");
         avcodec_decode_video2(vcodec_ctx, pFrame, &frameFinished, packet);
 
-        LogI(TAG, DEBUG, "open_media frameFinished:" + frameFinished);
+        LogI(TAG, DEBUG, "video_thread frameFinished:%d" + frameFinished);
         if(frameFinished)
         {
             AVPicture pict;
             uint8_t *dst_data[4];
             int dst_linesize[4];
 
-            LogI(TAG, DEBUG, "open_media av_image_alloc");
+            LogI(TAG, DEBUG, "video_thread av_image_alloc");
             av_image_alloc(pict.data, pict.linesize, vcodec_ctx->width, vcodec_ctx->height, AV_PIX_FMT_RGB565LE, 16);
-            LogI(TAG, DEBUG, "open_media img_covert begin");
+            LogI(TAG, DEBUG, "video_thread img_covert begin");
             img_covert(&pict, AV_PIX_FMT_RGB565LE, (AVPicture *)pFrame, vcodec_ctx->pix_fmt, vcodec_ctx->width, vcodec_ctx->height);
-            LogI(TAG, DEBUG, "open_media renderSurface begin");
-            renderSurface(pict.data[0]);
-            LogI(TAG, DEBUG, "open_media renderSurface end");
-            //av_free(&pict.data[0]);
-            LogI(TAG, DEBUG, "open_media av_free");
+            LogI(TAG, DEBUG, "video_thread renderSurface begin");
+            if (global_context.pause == 0)
+            {
+                renderSurface(pict.data[0]);
+            }
+            LogI(TAG, DEBUG, "video_thread renderSurface end");
+            av_freep(&pict.data[0]);
+            LogI(TAG, DEBUG, "video_thread av_freep");
         }
-        LogI(TAG, DEBUG, "open_media av_packet_unref");
+        LogI(TAG, DEBUG, "video_thread av_packet_unref");
         av_packet_unref(packet);
-        LogI(TAG, DEBUG, "open_media av_init_packet");
+        LogI(TAG, DEBUG, "video_thread av_init_packet");
         av_init_packet(packet);
-        LogI(TAG, DEBUG, "open_media usleep");
+        LogI(TAG, DEBUG, "video_thread usleep");
         usleep(10000);
-        LogI(TAG, DEBUG, "open_media usleep end");
+        LogI(TAG, DEBUG, "video_thread usleep end");
     }
-    LogI(TAG, DEBUG, "open_media av_free");
+    LogI(TAG, DEBUG, "video_thread av_free");
     av_free(pFrame);
-    LogI(TAG, DEBUG, "open_media av_free end");
+    LogI(TAG, DEBUG, "video_thread av_free end");
 }
 
 void video_render(AVCodecContext *vcodec_ctx, AVFrame *pFrame, AVPacket *pkt)

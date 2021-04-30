@@ -72,6 +72,8 @@ typedef struct GlobalContexts {
     int pause;
 }GlobalContext;
 
+extern GlobalContext global_context;
+
 
 void packet_queue_init(PacketQueue *q) ;
 int packet_queue_get(PacketQueue *q, AVPacket *pkt);
@@ -81,8 +83,6 @@ void* video_thread(void *argv);
 //void* open_media(void *argv);
 int32_t setBuffersGeometry(int32_t width, int32_t height);
 void renderSurface(uint8_t *pixel);
-
-extern GlobalContext global_context;
 
 #define TAG "FFmpeg"
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
